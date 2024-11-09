@@ -6,15 +6,13 @@ import (
 	"golang-question/errorx"
 )
 
-const (
-	ErrCodeSecretTooShort = 1001
-)
+const filePath = "demo.json"
 
 type Secret string
 
 func (s Secret) Validate() errorx.Error {
 	if len(s) < 8 {
-		return errorx.Cf(ErrCodeSecretTooShort, "invalid secret %s", s)
+		return errorx.Cf(errorx.CODE_SECRET_TOO_SHORT, "invalid secret %s", s)
 	}
 	return nil
 }
@@ -23,7 +21,7 @@ type Config struct {
 	Secret Secret `yaml:"secret" json:"secret"`
 }
 
-var conf = config.Local[Config]().Watch().InitData(Config{
+var conf = config.Local[Config](filePath).Watch().InitData(Config{
 	Secret: "hello world",
 })
 
@@ -32,7 +30,19 @@ func main() {
 	if err := s.Validate(); err != nil {
 		fmt.Printf("validate error: %+v\n", err)
 	}
+	fmt.Printf("update before: %+v\n", conf.Get())
 	if err := conf.Update(Config{Secret: Secret("updated secret")}); err != nil {
 		fmt.Printf("update error: %+v\n", err)
+	}
+	fmt.Printf("update after: %+v\n", conf.Get())
+
+	if err := conf.Update(Config{Secret: Secret("s")}); err != nil {
+		fmt.Printf("update error: %+v\n", err)
+	}
+	fmt.Printf("update after: %+v\n", conf.Get())
+
+	s = conf.Get().Secret
+	if err := s.Validate(); err != nil {
+		fmt.Printf("validate error: %+v\n", err)
 	}
 }
